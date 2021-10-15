@@ -19,3 +19,6 @@ start_fecha=datetime(2021,9,12)
 end_fecha=datetime(2021, 10, 7)
 df_historicos=f.f_historicos(conn,start_fecha,end_fecha)
 ## importlib.reload(f)
+
+#leer archivo
+pd.read_excel('C:\Users\ariad\OneDrive\Documentos\GitHub\MyST_LAB_3')

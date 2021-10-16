@@ -1,4 +1,5 @@
 #primero corrimos:   pip install MetaTrader5 
+from os import pardir
 import MetaTrader5 as mt
 import pandas as pd
 import numpy as np
@@ -8,33 +9,16 @@ import statistics
 
 from pandas.io.sql import DatabaseError
 
-
-def f_login(path, login, password, server):
-    connection=mt.initialize(path=meta_path, login=login_account,password=password,server=server_name,portable=False)
-    if connection:
-        print('funciona')
-    else:
-        print(mt.last_error())
-    return mt
-
 def f_account_info(connection):
     return mt.account_info()._asdict()
-
-#def f_leer_archivo(connection, start_date, end_date):
-#    df_deals=connection.history_deals_get(start_date,end_date)
- #   df_deals=pd.DataFrame(list(df_deals),columns=df_deals[0]._asdict().keys())
-  #  df_deals['time'] = pd.to_datetime(df_deals['time'], unit='s')
-   # return df_deals
-
-    #bajar orders también
 
 
 def f_leer_archivo():
     #del archivo donde estan los datos de inicio de sesión
-    Accounts = pd.read_csv(r'C:\Users\ariad\OneDrive\Documentos\GitHub\MyST_LAB_3\files\cuentas.csv')
-    Names = list(Accounts['Name'])
-    Users = list(Accounts['Account'])
-    Passwords = list(Accounts['Password'])
+    param_archivo = pd.read_csv(r'C:\Users\ariad\OneDrive\Documentos\GitHub\MyST_LAB_3\files\cuentas.csv')
+    Names = list(param_archivo['Name'])
+    Users = list(param_archivo['Account'])
+    Passwords = list(param_archivo['Password'])
     
     print('Los nombres son:',Names)
     Name = input('Ingrese nombre del integrante a analizar: ')
@@ -95,3 +79,35 @@ def f_leer_archivo():
     else:
         print(mt.last_error())
 
+
+def f_pip_size(param_ins):
+    param_archivo = pd.read_csv(r'C:\Users\ariad\OneDrive\Documentos\GitHub\MyST_LAB_3\files\cuentas.csv')
+    Names = list(param_archivo['Name'])
+    Users = list(param_archivo['Account'])
+    Passwords = list(param_archivo['Password'])
+    print('Los nombres son:',Names)
+    Name = input('Ingrese nombre del integrante a analizar: ')
+    #iniciar conexión con MT5
+    if Name in Names:
+        if Name == 'Ariadna':
+            a = mt.initialize(login=Users[0], server='FxPro-MT5',password=Passwords[0])
+            pip_size = int(0.1/mt.symbol_info(param_ins)._asdict().get('trade_tick_size'))
+        #Javier
+        else:
+            a = mt.initialize(login=Users[1], server='FxPro-MT5',password=Passwords[1])
+            pip_size = int(0.1/mt.symbol_info(param_ins)._asdict().get('trade_tick_size'))
+    else:
+        print(mt.last_error())
+    return pip_size
+
+def f_columnas_tiempos(param_data):
+    param_data['open_time'] = [datetime.fromtimestamp(i) for i in param_data['Time']]
+    param_data['close_time'] = [datetime.fromtimestamp(i) for i in param_data['Time.1']]
+    param_data['time'] = (param_data['close_time']-param_data['open_time']).apply(timedelta.total_seconds,1)
+    return param_data
+
+#def f_columnas_pips(param_data):
+ #   param_data = [param_data['Price.1'].iloc[i]-param_data['Price'].iloc[i])*f_pip_size(param_data['Symbol'].iloc[i])
+  #              if param_data['Type'].iloc[i]== 'buy'
+   #             else (param_data['Price'].iloc[i]-param_data['Price.1'].iloc[i])*f_pip_size(param_data['Symbol'].iloc[i])
+    #            for i in range]

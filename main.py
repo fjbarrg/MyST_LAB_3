@@ -14,7 +14,7 @@ EURUSD_pip = f.f_pip_size('EURUSD')
 tiempo = f.f_columnas_tiempos(historico_ariadna)
 
 # agregamos columna con los pips
-pips_ariadna = 
+pips_ariadna = f.f_columnas_pips(tiempo)
 
 
 

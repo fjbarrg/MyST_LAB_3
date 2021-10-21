@@ -9,6 +9,10 @@ import statistics
 
 from pandas.io.sql import DatabaseError
 
+
+#importar yahoo 
+import yfinance as yf
+
 def f_account_info(connection):
     return mt.account_info()._asdict()
 
@@ -79,7 +83,7 @@ def f_leer_archivo():
     else:
         print(mt.last_error())
 
-
+#%% 1.- Estadística Descriptiva
 def f_pip_size(param_ins):
     param_archivo = pd.read_csv(r'C:\Users\ariad\OneDrive\Documentos\GitHub\MyST_LAB_3\files\cuentas.csv')
     Names = list(param_archivo['Name'])
@@ -92,31 +96,31 @@ def f_pip_size(param_ins):
     except:
             print(mt.last_error())
 
-def f_columnas_tiempos(param_data):
-    param_data['open_time'] = [datetime.fromtimestamp(i) for i in param_data['Time']]
-    param_data['close_time'] = [datetime.fromtimestamp(i) for i in param_data['Time.1']]
-    param_data['time'] = (param_data['close_time']-param_data['open_time']).apply(timedelta.total_seconds,1)
-    return param_data
+def f_columnas_tiempos(pips_ariadna):
+    pips_ariadna['open_time'] = [datetime.fromtimestamp(i) for i in pips_ariadna['Time']]
+    pips_ariadna['close_time'] = [datetime.fromtimestamp(i) for i in pips_ariadna['Time.1']]
+    pips_ariadna['time'] = (pips_ariadna['close_time']-pips_ariadna['open_time']).apply(timedelta.total_seconds,1)
+    return pips_ariadna
 
-def f_columnas_pips(param_data):
-    param_data['pips'] = [(param_data['Price.1'].iloc[i]-param_data['Price'].iloc[i])*f_pip_size(param_data['Symbol'].iloc[i])
-                if param_data['Type'].iloc[i]== 'buy'
-                else (param_data['Price'].iloc[i]-param_data['Price.1'].iloc[i])*f_pip_size(param_data['Symbol'].iloc[i])
-                for i in range(len(param_data))]
-    param_data['pips_acm'] = param_data['pips'].cumsum()
-    param_data['profit_acm'] = param_data['Profit'].cumsum()
-    return param_data
+def f_columnas_pips(pips_ariadna):
+    pips_ariadna['pips'] = [(pips_ariadna['Price.1'].iloc[i]-pips_ariadna['Price'].iloc[i])*f_pip_size(pips_ariadna['Symbol'].iloc[i])
+                if pips_ariadna['Type'].iloc[i]== 'buy'
+                else (pips_ariadna['Price'].iloc[i]-pips_ariadna['Price.1'].iloc[i])*f_pip_size(pips_ariadna['Symbol'].iloc[i])
+                for i in range(len(pips_ariadna))]
+    pips_ariadna['pips_acm'] = pips_ariadna['pips'].cumsum()
+    pips_ariadna['profit_acm'] = pips_ariadna['Profit'].cumsum()
+    return pips_ariadna
 
-def f_estadisticas_ba(param_data):
-    Ops_totales = len(param_data)
-    Ganadoras = len(param_data[param_data['Profit']>=0])
-    Ganadoras_c = len(param_data[(param_data['Profit']>=0) & (param_data['Type']=='buy')])
-    Ganadoras_v = len(param_data[(param_data['Profit']>=0) & (param_data['Type']!='buy')])
-    Perdedoras = len(param_data[param_data['Profit']<0])
-    Perdedoras_c = len(param_data[(param_data['Profit']<0) & (param_data['Type']=='buy')])
-    Perdedoras_v = len(param_data[(param_data['Profit']<0) & (param_data['Type']!='buy')])
-    Mediana_profit = statistics.median(param_data.sort_values(by='Profit')['Profit'])
-    Mediana_pips = statistics.median(param_data.sort_values(by='pips')['pips'])
+def f_estadisticas_ba(pips_ariadna):
+    Ops_totales = len(pips_ariadna)
+    Ganadoras = len(pips_ariadna[pips_ariadna['Profit']>=0])
+    Ganadoras_c = len(pips_ariadna[(pips_ariadna['Profit']>=0) & (pips_ariadna['Type']=='buy')])
+    Ganadoras_v = len(pips_ariadna[(pips_ariadna['Profit']>=0) & (pips_ariadna['Type']!='buy')])
+    Perdedoras = len(pips_ariadna[pips_ariadna['Profit']<0])
+    Perdedoras_c = len(pips_ariadna[(pips_ariadna['Profit']<0) & (pips_ariadna['Type']=='buy')])
+    Perdedoras_v = len(pips_ariadna[(pips_ariadna['Profit']<0) & (pips_ariadna['Type']!='buy')])
+    Mediana_profit = statistics.median(pips_ariadna.sort_values(by='Profit')['Profit'])
+    Mediana_pips = statistics.median(pips_ariadna.sort_values(by='pips')['pips'])
     r_efectividad = Ganadoras/Ops_totales
     r_proporcion = Ganadoras/Perdedoras
     r_efectividad_c = Ganadoras_c/Ops_totales
@@ -136,14 +140,156 @@ def f_estadisticas_ba(param_data):
                                               'Ganadoras Totales/Perdedoras Totales',
                                               'Ganadoras Compras/Operaciones Totales',
                                               'Ganadoras Ventas/Operaciones Totales']})
-    symbols = param_data['Symbol'].unique()
-    df_2_ranking = pd.DataFrame({'symbol':param_data['Symbol'].unique(),
-                                 'rank (%)':100*np.round([len(param_data[(param_data['Profit']>0) & 
-                                                        (param_data['Symbol']==symbols[i])])/
-                                         len(param_data[param_data['Symbol']==symbols[i]]) 
+    symbols = pips_ariadna['Symbol'].unique()
+    df_2_ranking = pd.DataFrame({'symbol':pips_ariadna['Symbol'].unique(),
+                                 'rank (%)':100*np.round([len(pips_ariadna[(pips_ariadna['Profit']>0) & 
+                                                        (pips_ariadna['Symbol']==symbols[i])])/
+                                         len(pips_ariadna[pips_ariadna['Symbol']==symbols[i]]) 
                                          for i in range(len(symbols))],2)
                                 })
    
     df_2_ranking = df_2_ranking.sort_values(by='rank (%)',ascending=False).reset_index(drop=True)
     
     return {'df_1_tabla':df_1_tabla,'df_2_ranking':df_2_ranking}
+
+#%% Métricas de Atribución al Desempeño
+
+def f_evolucion_capital(param_data):
+    param_data['close_time'] = [i.strftime('%Y-%m-%d') for i in param_data['close_time']]
+    param_data['close_time_'] = pd.to_datetime(param_data['close_time'])
+    df = pd.DataFrame({'close_time_': pd.date_range(start='9/17/2021', end='10/15/2021')})
+    df = pd.merge(df, param_data.loc[:, ('close_time_', 'Profit')], how='left', on='close_time_')
+    df = df.fillna(0)
+    df = df.set_index('close_time_')
+    df = df.resample('D').sum()
+    df["profit_acm_d"] = df["Profit"].cumsum()
+    df["cap_acum"] = df["profit_acm_d"] + 1000000 #se le agrega el capital inicial
+
+    return df
+
+#importar yahoo 
+import yfinance as yf
+
+def f_estadisticas_mad(rf, df):
+    # Sharpe Ratio Original
+    rp = np.log(df.cap_acum) - np.log(df.cap_acum.shift(1))
+    rp = rp.fillna(0)
+    sdp = rp.std()
+    rp_mean = rp.mean()
+    rf = (rf / 252)
+    sharpe_original = (rp_mean - rf) / sdp
+
+    # Sharpe Ratio Actualizado
+    # benchmark = pd.read_csv(r'C:\Users\ariad\OneDrive\Documentos\GitHub\MyST_LAB_3\files\SP500.csv')['AdjClose']
+    #descargamos S&P500 de yahoo finance
+    benchmark = yf.download('^GSPC', '2021-09-17','2021-10-15')
+    benchmark = benchmark['Adj Close']
+    rp_benchmark = np.log(benchmark) - np.log(benchmark.shift(1))
+    rp_benchmark = rp_benchmark.fillna(0)
+    rp_benchmark = pd.DataFrame(rp_benchmark)
+    benchmark = pd.DataFrame(benchmark)
+    rp_benchmark = rp_benchmark.rename(columns={'Adj Close':'cap_acum'})
+    rp_rb = pd.concat([benchmark,rp_benchmark], axis=1)
+    rp_rb['Rp-Rb'] = rp_rb['cap_acum'] - rp_rb['Adj Close']
+    std_sra = rp_rb['Rp-Rb'].std()
+    r_trader = rp_rb['cap_acum'].mean()
+    r_benchmark = rp_rb['Adj Close'].mean()
+    sharpe_actualizado = (r_trader - r_benchmark) / std_sra
+
+    min_ = df.cap_acum.min()
+    max_ = df.cap_acum.max()
+
+    # Drawdown
+    drawdown_cap = df.profit_acm_d.min()
+    date_drawdown = (df.loc[df.profit_acm_d == drawdown_cap].index.values[0])
+    date_drawdown = np.datetime_as_string(date_drawdown, unit='D')
+    temp = 0
+    peak = 0
+    du = 0
+    b = df.profit_acm_d
+    for i in range(len(b)):
+        if b[i] < b[i - 1] and b[i] < peak:
+            peak = b[i]
+            temp = 0
+
+        elif b[i] > b[i - 1]:
+            temp = b[i]
+
+        if temp - peak > du:
+            du = temp - peak
+    # DrawUp
+    temp = 0
+    peak = 0
+    dd = 0
+    for i in range(len(b)):
+        if b[i] > b[i - 1] and b[i] > peak:
+            peak = b[i]
+            temp = 0
+
+        elif b[i] < b[i - 1]:
+            temp = b[i]
+
+        if temp - peak < dd:
+            dd = temp - peak
+    
+    
+    
+    drawup_cap = du
+    date_drawup = np.datetime_as_string(df.loc[df.cap_acum == min_].index.values[0], unit='D')
+
+    data = [
+        ['sharpe_original', 'Cantidad', sharpe_original, "Sharpe Ratio Fórmula Original"],
+        ['sharpe_actualizado', 'Cantidad', sharpe_actualizado, "Sharpe Ratio Fórmula Ajustada"],
+        ['drawdown_capi', 'Fecha Inicial', date_drawdown, "Fecha inicial del DrawDown de Capital"],
+        ['drawdown_capi', 'Fecha Final', date_drawdown, "Fecha final del DrawDown de Capital"],
+        ['drawdown_capi', 'Fecha Final', dd, "Máxima pérdida flotante registrada"],
+        ['drawup_capi', 'Fecha Inicial', date_drawup, "Fecha inicial del DrawUp de Capital"],
+        ['drawup_capi', 'Fecha Final', date_drawup, "Fecha final del DrawUp de Capital"],
+        ['drawup_capi', 'Fecha Final', drawup_cap, "Máxima ganancia flotante registrada"]
+            ]
+
+    df = pd.DataFrame(data, columns=['metrica', ' ', 'Valor', 'Descripción'])
+
+    return df
+
+#%% Behavioral Finance
+
+def f_columnas_pips2(param_data):
+    param_data['float_pips'] = [(param_data['float_price'].iloc[i]-param_data['Price'].iloc[i])*f_pip_size(param_data['Symbol'].iloc[i])
+                if param_data['Type'].iloc[i]== 'buy'
+                else (param_data['Price'].iloc[i]-param_data['float_price'].iloc[i])*f_pip_size(param_data['Symbol'].iloc[i])
+                for i in range(len(param_data))]
+    return param_data
+
+
+def f_be_de_parte1(param_data):
+    # Filtrado de operaciones ganadoras (operaciones ancla)
+    pips_ariadna['capital_acm'] = pips_ariadna['profit_acm'] + 100000
+    ganadoras = pips_ariadna[pips_ariadna.Profit > 0]
+    ganadoras = ganadoras.reset_index(drop=True)
+    ganadoras["Ratio"] = (ganadoras["Profit"] / abs(ganadoras["profit_acm"]))
+
+    perdedoras = pips_ariadna[pips_ariadna.Profit < 0]
+    perdedoras = perdedoras.reset_index(drop=True)
+    perdedoras["Ratio"] = (perdedoras["Profit"] / abs(perdedoras["profit_acm"]))
+
+    df_anclas = ganadoras.loc[:, ['close_time', "open_time", 'Type', "Symbol",'Profit', "profit_acm", "capital_acm", "Ratio", "Time", "Time.1", "Price", "Volume"]]                         
+    df_anclas = df_anclas.reset_index(drop=True)
+
+    # Criterio de selección de operaciones abiertas por cada ancla
+    ocurrencias = []
+    file_list = []
+    for x in df_anclas.index:
+        df = pips_ariadna[(pips_ariadna.open_time <= df_anclas["close_time"][x]) &
+                        (pips_ariadna.close_time > df_anclas["close_time"][x])].loc[:,
+             ['Type', 'Symbol', 'Volume', 'Profit', "Price", "pips"]]
+        df['close_time_ancla'] = pd.Timestamp(df_anclas['close_time'][x])
+        file_list.append(df)
+        ocurrencias.append(len(df))
+    all_df = pd.concat(file_list, ignore_index=True)
+
+    # Descarga de precios para cada operación abierta
+    float_price = []
+    if not mt.initialize():
+        print(mt.last_error())
+        quit()

@@ -8,6 +8,8 @@ def pie_chart(df_2_ranking):
 
     fig = go.Figure(data=[go.Pie(labels=labels, values=values, pull=[0, 0, 0.2, 0])])
     fig.update_layout(
-        title_text="Ranking de las Operaciones de Trading")
+    title_text="Ranking de las Operaciones de Trading")
 
     return fig.show()
+
+df_2_ranking = e_desc.get('df_2_ranking')

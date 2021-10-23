@@ -11,7 +11,7 @@ from pandas.io.sql import DatabaseError
 
 
 #importar yahoo 
-import yfinance as yf
+import yfinance as yf   
 
 def f_account_info(connection):
     return mt.account_info()._asdict()
@@ -176,7 +176,7 @@ def f_estadisticas_mad(rf, df):
     rp = rp.fillna(0)
     sdp = rp.std()
     rp_mean = rp.mean()
-    rf = (rf / 252)
+    rf = (0.05 / 252)
     sharpe_original = (rp_mean - rf) / sdp
 
     # Sharpe Ratio Actualizado
@@ -250,7 +250,7 @@ def f_estadisticas_mad(rf, df):
 
     df = pd.DataFrame(data, columns=['metrica', ' ', 'Valor', 'Descripción'])
 
-    return df
+    return df , dd, drawup_cap
 
 #%% Behavioral Finance
 
@@ -275,6 +275,8 @@ def f_be_de_parte1(param_data):
 
     df_anclas = ganadoras.loc[:, ['close_time', "open_time", 'Type', "Symbol",'Profit', "profit_acm", "capital_acm", "Ratio", "Time", "Time.1", "Price", "Volume"]]                         
     df_anclas = df_anclas.reset_index(drop=True)
+    
+    # pedir timeframe 
 
     # Criterio de selección de operaciones abiertas por cada ancla
     ocurrencias = []

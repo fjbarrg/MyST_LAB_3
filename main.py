@@ -13,7 +13,7 @@ EURUSD_pip = f.f_pip_size('EURUSD')
 tiempo = f.f_columnas_tiempos(historico_ariadna) #modificar f.pip_size segun el usuario 
 
 # agregamos columna con los pips
-pips_ariadna = f.f_columnas_pips(tiempo)
+pips_ariadna = f.f_columnas_pips_A(tiempo)
 
 # diccionarios
 estadisticas = f.f_estadisticas_ba(pips_ariadna)
@@ -25,6 +25,6 @@ metricas = f.f_evolucion_capital(historico_ariadna)
 e_desc = f.f_estadisticas_mad(0.05,metricas)
 
 # behavioral finance
-ocurrencias, df_anclas = f.f_columnas_pips2(pips_ariadna)
+behavioral = f.f_be_de(historico_ariadna)
 
 

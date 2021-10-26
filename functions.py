@@ -84,7 +84,7 @@ def f_leer_archivo():
         print(mt.last_error())
 
 #%% 1.- Estadística Descriptiva
-def f_pip_size(param_ins):
+def f_pip_size_A(param_ins):
     param_archivo = pd.read_csv(r'C:\Users\ariad\OneDrive\Documentos\GitHub\MyST_LAB_3\files\cuentas.csv')
     Names = list(param_archivo['Name'])
     Users = list(param_archivo['Account'])
@@ -96,16 +96,37 @@ def f_pip_size(param_ins):
     except:
             print(mt.last_error())
 
+def f_pip_size_J(param_ins):
+    param_archivo = pd.read_csv(r'C:\Users\ariad\OneDrive\Documentos\GitHub\MyST_LAB_3\files\cuentas.csv')
+    Names = list(param_archivo['Name'])
+    Users = list(param_archivo['Account'])
+    Passwords = list(param_archivo['Password'])
+    try:
+        mt.initialize(login=Users[1], server='FxPro-MT5',password=Passwords[1])
+        pip_size = int(0.1/mt.symbol_info(param_ins)._asdict().get('trade_tick_size'))
+        return pip_size
+    except:
+            print(mt.last_error())
+
 def f_columnas_tiempos(param_data):
     param_data['open_time'] = [datetime.fromtimestamp(i) for i in param_data['Time']]
     param_data['close_time'] = [datetime.fromtimestamp(i) for i in param_data['Time.1']]
     param_data['time'] = (param_data['close_time']-param_data['open_time']).apply(timedelta.total_seconds,1)
     return param_data
 
-def f_columnas_pips(param_data):
-    param_data['pips'] = [(param_data['Price.1'].iloc[i]-param_data['Price'].iloc[i])*f_pip_size(param_data['Symbol'].iloc[i])
+def f_columnas_pips_A(param_data):
+    param_data['pips'] = [(param_data['Price.1'].iloc[i]-param_data['Price'].iloc[i])*f_pip_size_A(param_data['Symbol'].iloc[i])
                 if param_data['Type'].iloc[i]== 'buy'
-                else (param_data['Price'].iloc[i]-param_data['Price.1'].iloc[i])*f_pip_size(param_data['Symbol'].iloc[i])
+                else (param_data['Price'].iloc[i]-param_data['Price.1'].iloc[i])*f_pip_size_A(param_data['Symbol'].iloc[i])
+                for i in range(len(param_data))]
+    param_data['pips_acm'] = param_data['pips'].cumsum()
+    param_data['profit_acm'] = param_data['Profit'].cumsum()
+    return param_data
+
+def f_columnas_pips_J(param_data):
+    param_data['pips'] = [(param_data['Price.1'].iloc[i]-param_data['Price'].iloc[i])*f_pip_size_J(param_data['Symbol'].iloc[i])
+                if param_data['Type'].iloc[i]== 'buy'
+                else (param_data['Price'].iloc[i]-param_data['Price.1'].iloc[i])*f_pip_size_J(param_data['Symbol'].iloc[i])
                 for i in range(len(param_data))]
     param_data['pips_acm'] = param_data['pips'].cumsum()
     param_data['profit_acm'] = param_data['Profit'].cumsum()
@@ -150,7 +171,7 @@ def f_estadisticas_ba(param_data):
    
     df_2_ranking = df_2_ranking.sort_values(by='rank (%)',ascending=False).reset_index(drop=True)
     
-    return {'df_1_tabla''df_2_ranking':df_2_ranking}
+    return df_1_tabla,df_2_ranking
 
 #%% Métricas de Atribución al Desempeño
 
@@ -262,59 +283,57 @@ def f_columnas_pips2(param_data):
     return param_data
 
 
-def f_be_de_parte1(param_data):
+def f_be_de(param_data):
     # Filtrado de operaciones ganadoras (operaciones ancla)
     param_data['capital_acm'] = param_data['profit_acm'] + 100000
-    ganadoras = param_data[param_data.Profit > 0]
-    ganadoras = ganadoras.reset_index(drop=True)
-    ganadoras["Ratio"] = (ganadoras["Profit"] / abs(ganadoras["profit_acm"]))
-
+    # ganadoras = anclas
+    anclas = param_data[param_data.Profit > 0]
+    anclas = anclas.reset_index(drop=True)
+    anclas["Ratio"] = (anclas["Profit"] / abs(anclas["profit_acm"]))
+    anclas["cantidad"] = [anclas.index[i]+1 for i in range(len(anclas.index))]
+    # perdedoras
     perdedoras = param_data[param_data.Profit < 0]
     perdedoras = perdedoras.reset_index(drop=True)
     perdedoras["Ratio"] = (perdedoras["Profit"] / abs(perdedoras["profit_acm"]))
+    perdedoras["cantidad"] = [perdedoras.index[i]+1 for i in range(len(perdedoras.index))]
 
-    df_anclas = ganadoras.loc[:, ['close_time', "open_time", 'Type', "Symbol",'Profit', "profit_acm", "capital_acm", "Ratio", "Time", "Time.1", "Price", "Volume"]]                         
-    df_anclas = df_anclas.reset_index(drop=True)
+    #df_anclas = ganadoras.loc[:, ['close_time', "open_time", 'Type', "Symbol",'Profit', "profit_acm", "capital_acm", "Ratio", "Time", "Time.1", "Price", "Volume"]]                         
+    #df_anclas = df_anclas.reset_index(drop=True)
     
     # Criterio de selección de operaciones abiertas por cada ancla
-    ocurrencias = []
-    file_list = []
-    for x in df_anclas.index:
-        df = param_data[(param_data.open_time <= df_anclas["close_time"][x]) &
-                        (param_data.close_time > df_anclas["close_time"][x])].loc[:,
-             ['Type', 'Symbol', 'Volume', 'Profit', "Price", "pips"]]
-        df['close_time_ancla'] = pd.Timestamp(df_anclas['close_time'][x])
-        file_list.append(df)
-        ocurrencias.append(len(df))
-    all_df = pd.concat(file_list, ignore_index=True)
+    ocurrencias = anclas['cantidad']
+    
+    # Resultados
 
-    # Descarga de precios para cada operación abierta
-    float_price = []
-  
-    for i in range(len(all_df)):
-        utc_from = datetime(all_df['close_time_ancla'][i].year,
-                            all_df['close_time_ancla'][i].month,
-                            all_df['close_time_ancla'][i].day) 
-        utc_to = datetime(all_df['close_time_ancla'][i].year+1,
-                            all_df['close_time_ancla'][i].month+1,
-                            all_df['close_time_ancla'][i].day+1) 
-        symbol = all_df['Symbol'][i]
-        ticks = mt.copy_ticks_range(symbol, utc_from, utc_to, mt.COPY_TICKS_ALL)
-        ticks_frame = pd.DataFrame(ticks)
-        ticks_frame['time'] = pd.to_datetime(ticks_frame['time'], unit='s')
-        tick_time = next(x for x in ticks_frame['time'] if x >= all_df['close_time_ancla'][i])
-        price = ticks_frame.loc[ticks_frame['time'] == tick_time]
-        if all_df["Type"][i] == "buy":
-            price = price["bid"].mean()
-        else:
-            price = price["ask"].mean()
-        float_price.append(price)
-        float_prices = pd.DataFrame(columns=['float_price'], data=float_price)
+    df_results = pd.DataFrame()
+    df_results['ocurrencias'] = [anclas['cantidad']]
+    cantidad = anclas['cantidad']
+    llaves = list(ocurrencias.keys())
+    quo = 0
+    aversion = 0
 
-    all_df = all_df.join(float_prices)
+    for x in llaves[:]:
+        if perdedoras.iloc[0]['Ratio'] < anclas.iloc[0]['Ratio']:
+            quo += 1
+        if perdedoras.iloc[0]['Profit'] / anclas.iloc[0]['Profit'] > 2:
+            aversion += 1
 
-    all_df = f_columnas_pips2(all_df)
-    all_df["float_P&L"] = (all_df["Profit"] / all_df["pips"]) * all_df["float_pips"]
-    all_df = all_df[all_df['float_P&L'] < 0].reset_index(drop=True)
+    status_quo = quo / cantidad
+    aversion_perdida = aversion / cantidad
 
-    return all_df, df_anclas
+    #if (float(f_evolucion_capital(param_data).cap_acum.iloc[-1:].values) > float(f_evolucion_capital(param_data).cap_acum.iloc[0])) \
+    #        and (anclas.iloc[-1].Profit > anclas.iloc[0].Profit) \
+    #        and (perdedoras.iloc[-1].Profit > perdedoras.iloc[0].Profit):
+    #    sensibilidad = 'Si'
+    #else:
+    #    sensibilidad = 'No'
+
+    df_results['status_quo'] = [status_quo]
+    df_results['aversion_perdida'] = [aversion_perdida]
+    #df_results['sensibilidad_decreciente'] = [sensibilidad]
+
+    ans = {'Ocurrencias': ocurrencias,
+           'Resultados': df_results}
+
+    return ans
+# %%

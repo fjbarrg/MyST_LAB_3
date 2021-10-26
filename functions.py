@@ -96,31 +96,31 @@ def f_pip_size(param_ins):
     except:
             print(mt.last_error())
 
-def f_columnas_tiempos(pips_ariadna):
-    pips_ariadna['open_time'] = [datetime.fromtimestamp(i) for i in pips_ariadna['Time']]
-    pips_ariadna['close_time'] = [datetime.fromtimestamp(i) for i in pips_ariadna['Time.1']]
-    pips_ariadna['time'] = (pips_ariadna['close_time']-pips_ariadna['open_time']).apply(timedelta.total_seconds,1)
-    return pips_ariadna
+def f_columnas_tiempos(param_data):
+    param_data['open_time'] = [datetime.fromtimestamp(i) for i in param_data['Time']]
+    param_data['close_time'] = [datetime.fromtimestamp(i) for i in param_data['Time.1']]
+    param_data['time'] = (param_data['close_time']-param_data['open_time']).apply(timedelta.total_seconds,1)
+    return param_data
 
-def f_columnas_pips(pips_ariadna):
-    pips_ariadna['pips'] = [(pips_ariadna['Price.1'].iloc[i]-pips_ariadna['Price'].iloc[i])*f_pip_size(pips_ariadna['Symbol'].iloc[i])
-                if pips_ariadna['Type'].iloc[i]== 'buy'
-                else (pips_ariadna['Price'].iloc[i]-pips_ariadna['Price.1'].iloc[i])*f_pip_size(pips_ariadna['Symbol'].iloc[i])
-                for i in range(len(pips_ariadna))]
-    pips_ariadna['pips_acm'] = pips_ariadna['pips'].cumsum()
-    pips_ariadna['profit_acm'] = pips_ariadna['Profit'].cumsum()
-    return pips_ariadna
+def f_columnas_pips(param_data):
+    param_data['pips'] = [(param_data['Price.1'].iloc[i]-param_data['Price'].iloc[i])*f_pip_size(param_data['Symbol'].iloc[i])
+                if param_data['Type'].iloc[i]== 'buy'
+                else (param_data['Price'].iloc[i]-param_data['Price.1'].iloc[i])*f_pip_size(param_data['Symbol'].iloc[i])
+                for i in range(len(param_data))]
+    param_data['pips_acm'] = param_data['pips'].cumsum()
+    param_data['profit_acm'] = param_data['Profit'].cumsum()
+    return param_data
 
-def f_estadisticas_ba(pips_ariadna):
-    Ops_totales = len(pips_ariadna)
-    Ganadoras = len(pips_ariadna[pips_ariadna['Profit']>=0])
-    Ganadoras_c = len(pips_ariadna[(pips_ariadna['Profit']>=0) & (pips_ariadna['Type']=='buy')])
-    Ganadoras_v = len(pips_ariadna[(pips_ariadna['Profit']>=0) & (pips_ariadna['Type']!='buy')])
-    Perdedoras = len(pips_ariadna[pips_ariadna['Profit']<0])
-    Perdedoras_c = len(pips_ariadna[(pips_ariadna['Profit']<0) & (pips_ariadna['Type']=='buy')])
-    Perdedoras_v = len(pips_ariadna[(pips_ariadna['Profit']<0) & (pips_ariadna['Type']!='buy')])
-    Mediana_profit = statistics.median(pips_ariadna.sort_values(by='Profit')['Profit'])
-    Mediana_pips = statistics.median(pips_ariadna.sort_values(by='pips')['pips'])
+def f_estadisticas_ba(param_data):
+    Ops_totales = len(param_data)
+    Ganadoras = len(param_data[param_data['Profit']>=0])
+    Ganadoras_c = len(param_data[(param_data['Profit']>=0) & (param_data['Type']=='buy')])
+    Ganadoras_v = len(param_data[(param_data['Profit']>=0) & (param_data['Type']!='buy')])
+    Perdedoras = len(param_data[param_data['Profit']<0])
+    Perdedoras_c = len(param_data[(param_data['Profit']<0) & (param_data['Type']=='buy')])
+    Perdedoras_v = len(param_data[(param_data['Profit']<0) & (param_data['Type']!='buy')])
+    Mediana_profit = statistics.median(param_data.sort_values(by='Profit')['Profit'])
+    Mediana_pips = statistics.median(param_data.sort_values(by='pips')['pips'])
     r_efectividad = Ganadoras/Ops_totales
     r_proporcion = Ganadoras/Perdedoras
     r_efectividad_c = Ganadoras_c/Ops_totales
@@ -140,17 +140,17 @@ def f_estadisticas_ba(pips_ariadna):
                                               'Ganadoras Totales/Perdedoras Totales',
                                               'Ganadoras Compras/Operaciones Totales',
                                               'Ganadoras Ventas/Operaciones Totales']})
-    symbols = pips_ariadna['Symbol'].unique()
-    df_2_ranking = pd.DataFrame({'symbol':pips_ariadna['Symbol'].unique(),
-                                 'rank (%)':100*np.round([len(pips_ariadna[(pips_ariadna['Profit']>0) & 
-                                                        (pips_ariadna['Symbol']==symbols[i])])/
-                                         len(pips_ariadna[pips_ariadna['Symbol']==symbols[i]]) 
+    symbols = param_data['Symbol'].unique()
+    df_2_ranking = pd.DataFrame({'symbol':param_data['Symbol'].unique(),
+                                 'rank (%)':100*np.round([len(param_data[(param_data['Profit']>0) & 
+                                                        (param_data['Symbol']==symbols[i])])/
+                                         len(param_data[param_data['Symbol']==symbols[i]]) 
                                          for i in range(len(symbols))],2)
                                 })
    
     df_2_ranking = df_2_ranking.sort_values(by='rank (%)',ascending=False).reset_index(drop=True)
     
-    return {'df_1_tabla':df_1_tabla,'df_2_ranking':df_2_ranking}
+    return {'df_1_tabla''df_2_ranking':df_2_ranking}
 
 #%% Métricas de Atribución al Desempeño
 
@@ -264,26 +264,24 @@ def f_columnas_pips2(param_data):
 
 def f_be_de_parte1(param_data):
     # Filtrado de operaciones ganadoras (operaciones ancla)
-    pips_ariadna['capital_acm'] = pips_ariadna['profit_acm'] + 100000
-    ganadoras = pips_ariadna[pips_ariadna.Profit > 0]
+    param_data['capital_acm'] = param_data['profit_acm'] + 100000
+    ganadoras = param_data[param_data.Profit > 0]
     ganadoras = ganadoras.reset_index(drop=True)
     ganadoras["Ratio"] = (ganadoras["Profit"] / abs(ganadoras["profit_acm"]))
 
-    perdedoras = pips_ariadna[pips_ariadna.Profit < 0]
+    perdedoras = param_data[param_data.Profit < 0]
     perdedoras = perdedoras.reset_index(drop=True)
     perdedoras["Ratio"] = (perdedoras["Profit"] / abs(perdedoras["profit_acm"]))
 
     df_anclas = ganadoras.loc[:, ['close_time', "open_time", 'Type', "Symbol",'Profit', "profit_acm", "capital_acm", "Ratio", "Time", "Time.1", "Price", "Volume"]]                         
     df_anclas = df_anclas.reset_index(drop=True)
     
-    # pedir timeframe 
-
     # Criterio de selección de operaciones abiertas por cada ancla
     ocurrencias = []
     file_list = []
     for x in df_anclas.index:
-        df = pips_ariadna[(pips_ariadna.open_time <= df_anclas["close_time"][x]) &
-                        (pips_ariadna.close_time > df_anclas["close_time"][x])].loc[:,
+        df = param_data[(param_data.open_time <= df_anclas["close_time"][x]) &
+                        (param_data.close_time > df_anclas["close_time"][x])].loc[:,
              ['Type', 'Symbol', 'Volume', 'Profit', "Price", "pips"]]
         df['close_time_ancla'] = pd.Timestamp(df_anclas['close_time'][x])
         file_list.append(df)
@@ -292,6 +290,31 @@ def f_be_de_parte1(param_data):
 
     # Descarga de precios para cada operación abierta
     float_price = []
-    if not mt.initialize():
-        print(mt.last_error())
-        quit()
+  
+    for i in range(len(all_df)):
+        utc_from = datetime(all_df['close_time_ancla'][i].year,
+                            all_df['close_time_ancla'][i].month,
+                            all_df['close_time_ancla'][i].day) 
+        utc_to = datetime(all_df['close_time_ancla'][i].year+1,
+                            all_df['close_time_ancla'][i].month+1,
+                            all_df['close_time_ancla'][i].day+1) 
+        symbol = all_df['Symbol'][i]
+        ticks = mt.copy_ticks_range(symbol, utc_from, utc_to, mt.COPY_TICKS_ALL)
+        ticks_frame = pd.DataFrame(ticks)
+        ticks_frame['time'] = pd.to_datetime(ticks_frame['time'], unit='s')
+        tick_time = next(x for x in ticks_frame['time'] if x >= all_df['close_time_ancla'][i])
+        price = ticks_frame.loc[ticks_frame['time'] == tick_time]
+        if all_df["Type"][i] == "buy":
+            price = price["bid"].mean()
+        else:
+            price = price["ask"].mean()
+        float_price.append(price)
+        float_prices = pd.DataFrame(columns=['float_price'], data=float_price)
+
+    all_df = all_df.join(float_prices)
+
+    all_df = f_columnas_pips2(all_df)
+    all_df["float_P&L"] = (all_df["Profit"] / all_df["pips"]) * all_df["float_pips"]
+    all_df = all_df[all_df['float_P&L'] < 0].reset_index(drop=True)
+
+    return all_df, df_anclas

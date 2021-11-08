@@ -10,7 +10,6 @@ login_account=5400337
 password= 'yKptOu7U'
 server_name='FxPro-MT5'
 t_out=1000
-
 #conectamos 
 conn=f.f_login(meta_path,login_account,password,server_name)
 
